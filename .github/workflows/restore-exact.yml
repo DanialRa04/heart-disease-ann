@@ -1,0 +1,35 @@
+name: Restore exact project files
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore from ML-Fundamentals pre-split commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$PWD"
+          src="$(mktemp -d)"
+          git clone --no-checkout https://github.com/DanialRa04/ML-Fundamentals.git "$src/source"
+          git -C "$src/source" checkout 19c9987
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$src/source/projects/heart-disease-ann/." .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Restore exact project files"
+            git push
+          fi
